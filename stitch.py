@@ -44,23 +44,17 @@ for i, fn in enumerate(fns):
     cnts = tbl["FLUX"]
     if img is None:
         img = np.empty((len(cnts), meta["xmax"].max(),
-                        meta["ymax"].max()), dtype=int)
+                        meta["ymax"].max()), dtype=float)
         mask = np.zeros(img.shape[1:], dtype=bool)
     img[:, xi, yi] = cnts
     mask[xi, yi] = True
-
     time = tbl["TIME"]
-    if quality is None:
-        quality = np.zeros(len(time), dtype=int)
-    quality |= tbl["QUALITY"]
 
 # Save a FITS image for WCS calibration using astrometry.net
 # fitsio.write("image.fits", img[-1], clobber=True)
 
 # Save the block of frames as a huge HDF5 file.
 print("Saving...")
-time = np.array(list(zip(time, quality)),
-                dtype=[("time", np.float64), ("quality", np.int32)])
 with h5py.File("data/k2/superstamp.h5", "w") as f:
     # f.create_dataset("meta", data=meta)
     f.create_dataset("frames", data=img)
