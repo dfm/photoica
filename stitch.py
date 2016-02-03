@@ -9,7 +9,7 @@ import h5py
 import fitsio
 import numpy as np
 
-fns = glob.glob("data/k2/c0/*.fits.gz")
+fns = glob.glob("data/k2/*.fits.gz")
 base_fns = [os.path.split(fn)[1] for fn in fns]
 n = len(fns)
 meta = np.empty(n, dtype=[
@@ -41,36 +41,21 @@ for i, fn in enumerate(fns):
     tbl = fitsio.read(fn)
     xi, yi = np.meshgrid(range(meta["xmin"][i], meta["xmax"][i]),
                          range(meta["ymin"][i], meta["ymax"][i]))
-    cnts = tbl["FLUX"]
+    flux = tbl["FLUX"]
     if img is None:
-        img = np.empty((len(cnts), meta["xmax"].max(),
+        img = np.empty((len(flux), meta["xmax"].max(),
                         meta["ymax"].max()), dtype=float)
         mask = np.zeros(img.shape[1:], dtype=bool)
-    img[:, xi, yi] = cnts
+    img[:, xi, yi] = flux
     mask[xi, yi] = True
     time = tbl["TIME"]
 
 # Save a FITS image for WCS calibration using astrometry.net
-# fitsio.write("image.fits", img[-1], clobber=True)
+fitsio.write("data/k2.fits", img[-1], clobber=True)
 
 # Save the block of frames as a huge HDF5 file.
 print("Saving...")
-with h5py.File("data/k2/superstamp.h5", "w") as f:
-    # f.create_dataset("meta", data=meta)
+with h5py.File("data/k2.h5", "w") as f:
     f.create_dataset("frames", data=img)
     f.create_dataset("mask", data=mask)
     f.create_dataset("time", data=time)
-
-
-# import matplotlib.pyplot as pl
-
-# i = img[-500]
-# m = np.isfinite(i)
-# mu = np.mean(i[m])
-# std = np.std(i[m])
-
-# pl.close("all")
-# pl.figure(figsize=(25, 25))
-# pl.imshow(i, vmin=mu-std, vmax=mu+std, cmap="gray", interpolation="nearest")
-# pl.axis("off")
-# pl.savefig("image.pdf", bbox_inches="tight")
